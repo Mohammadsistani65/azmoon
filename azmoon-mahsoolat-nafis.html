@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آزمون تخصصی محصولات پوست و مو</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --sage:#5f7a63;
+    --sage-dark:#3f5643;
+    --cream:#faf6ef;
+    --card:#ffffff;
+    --gold:#b8935a;
+    --ink:#2b2b26;
+    --muted:#7a756a;
+    --line:#e6ded0;
+    --danger:#b5533f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Vazirmatn',sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    line-height:1.9;
+    min-height:100vh;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:28px 18px 80px}
+
+  header.top{
+    text-align:center;
+    padding:34px 10px 22px;
+  }
+  header.top .badge{
+    display:inline-block;
+    font-size:13px;
+    color:var(--gold);
+    letter-spacing:.5px;
+    border:1px solid var(--gold);
+    border-radius:999px;
+    padding:4px 16px;
+    margin-bottom:14px;
+  }
+  header.top h1{
+    font-size:26px;
+    font-weight:800;
+    margin:0 0 8px;
+    color:var(--sage-dark);
+  }
+  header.top p{
+    color:var(--muted);
+    font-size:15px;
+    margin:0;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:18px;
+  }
+
+  /* ---- start screen ---- */
+  #startScreen label{
+    display:block;
+    font-weight:600;
+    margin-bottom:8px;
+    font-size:15px;
+  }
+  #startScreen input{
+    width:100%;
+    padding:13px 14px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-family:inherit;
+    font-size:15px;
+    background:#fdfcfa;
+  }
+  #startScreen input:focus{outline:none;border-color:var(--sage)}
+  .rules{
+    font-size:14px;
+    color:var(--muted);
+    margin:18px 0 22px;
+    padding-right:18px;
+  }
+  .rules li{margin-bottom:6px}
+
+  button.primary{
+    width:100%;
+    background:var(--sage-dark);
+    color:#fff;
+    border:none;
+    padding:15px;
+    border-radius:11px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  button.primary:hover{background:var(--sage)}
+  button.primary:disabled{background:#c9c4b8;cursor:not-allowed}
+
+  /* ---- progress ---- */
+  #progressWrap{
+    display:none;
+    position:sticky;
+    top:0;
+    background:var(--cream);
+    padding:10px 0 14px;
+    z-index:5;
+  }
+  .progress-track{
+    height:6px;
+    background:var(--line);
+    border-radius:99px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--sage);
+    width:0%;
+    transition:width .25s;
+  }
+  .progress-label{
+    font-size:13px;
+    color:var(--muted);
+    margin-top:8px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---- questions ---- */
+  #examForm{display:none}
+  .q-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:16px;
+  }
+  .q-cat{
+    display:inline-block;
+    font-size:12px;
+    color:var(--sage-dark);
+    background:#eaf0e9;
+    padding:3px 12px;
+    border-radius:99px;
+    margin-bottom:12px;
+    font-weight:600;
+  }
+  .q-text{
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 16px;
+  }
+  .q-num{color:var(--gold); margin-left:6px}
+
+  .opt{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:#fbf9f4;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:9px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .opt:hover{border-color:var(--sage)}
+  .opt input{margin-top:3px; accent-color:var(--sage-dark)}
+  .opt.checked{border-color:var(--sage-dark); background:#eef3ec}
+  .opt span{font-size:14.5px}
+
+  textarea.answer{
+    width:100%;
+    min-height:90px;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-family:inherit;
+    font-size:14.5px;
+    resize:vertical;
+    background:#fdfcfa;
+  }
+  textarea.answer:focus{outline:none;border-color:var(--sage)}
+
+  .submit-wrap{margin-top:24px}
+  #warnMsg{
+    display:none;
+    color:var(--danger);
+    font-size:14px;
+    text-align:center;
+    margin-top:10px;
+  }
+
+  /* ---- done screen ---- */
+  #doneScreen{display:none; text-align:center; padding:50px 20px}
+  #doneScreen .check{font-size:52px; margin-bottom:14px}
+  #doneScreen h2{color:var(--sage-dark); margin-bottom:10px}
+  #doneScreen p{color:var(--muted); font-size:15px}
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:12.5px;
+    margin-top:40px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span class="badge">ارزیابی دانش تخصصی</span>
+    <h1>آزمون تخصصی محصولات پوست و مو</h1>
+    <p>بلک‌بری · الن بیوتی · MND</p>
+  </header>
+
+  <!-- start -->
+  <div class="card" id="startScreen">
+    <label for="nameInput">نام و نام خانوادگی</label>
+    <input type="text" id="nameInput" placeholder="مثلاً: زهرا احمدی">
+    <ul class="rules">
+      <li>این آزمون شامل ۲۵ سوال چندگزینه‌ای و تشریحی درباره محصولات، نحوه مصرف و روتین‌های پوستی و مویی است.</li>
+      <li>برای سوالات تشریحی، پاسخ را با جزئیات و نام دقیق محصولات بنویسید.</li>
+      <li>پاسخ‌ها پس از ارسال قابل ویرایش نیستند.</li>
+    </ul>
+    <button class="primary" id="startBtn">شروع آزمون</button>
+  </div>
+
+  <!-- progress -->
+  <div id="progressWrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label"><span id="progressText">۰ از ۲۵ پاسخ داده شده</span><span id="progressPct">۰٪</span></div>
+  </div>
+
+  <!-- exam -->
+  <form id="examForm"></form>
+  <div class="submit-wrap" id="submitWrap" style="display:none">
+    <button class="primary" id="submitBtn">ثبت نهایی پاسخ‌ها</button>
+    <div id="warnMsg">لطفاً به همه سوالات پاسخ دهید.</div>
+  </div>
+
+  <!-- done -->
+  <div id="doneScreen">
+    <div class="check">✅</div>
+    <h2>پاسخ‌های شما ثبت شد</h2>
+    <p>با تشکر از مشارکت شما در این ارزیابی.</p>
+  </div>
+
+  <footer>طراح: محمد سیستانی</footer>
+</div>
+
+<script>
+/* ===================== تنظیمات Supabase ===================== */
+/* آدرس پروژه و کلید anon خودت رو اینجا جایگزین کن */
+const SUPABASE_URL = "https://atrfyfwwhtzxarnpjnlu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0cmZ5Znd3aHR6eGFybnBqbmx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTI5MjcsImV4cCI6MjEwMDE4ODkyN30.o-nD3ROsmmUSpQHbziQi7qKz4qdRAC9EXhDino95wL8";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const TABLE_NAME = "exam_responses";
+
+/* ===================== بانک سوالات ===================== */
+const questions = [
+  {id:1, cat:"ویژگی محصولات", type:"mc",
+   text:"سرم ضد چروک بلک‌بری که حاوی ذرات طلای ۲۴ عیار است، برای چه نوع پوستی مناسب معرفی شده؟",
+   options:["فقط پوست چرب","همه انواع پوست","فقط پوست خشک","فقط پوست حساس"], correct:1},
+
+  {id:2, cat:"ویژگی محصولات", type:"mc",
+   text:"ماده موثره اصلی «سرم روشن‌کننده» بلک‌بری که در کاهش لک و یکدست‌سازی رنگ پوست نقش دارد چیست؟",
+   options:["رتینول","نیاسینامید ۱۰٪","آلفا آربوتین ۲٪","اوره ۵٪"], correct:2},
+
+  {id:3, cat:"ویژگی محصولات", type:"mc",
+   text:"سرم کنترل چربی و منافذ باز بلک‌بری (مناسب پوست چرب) حاوی چه درصدی نیاسینامید و زینک است؟",
+   options:["۵٪ نیاسینامید و ۲٪ زینک","۱۰٪ نیاسینامید و ۱٪ زینک","۲٪ نیاسینامید و ۵٪ زینک","۱۵٪ نیاسینامید بدون زینک"], correct:1},
+
+  {id:4, cat:"ویژگی محصولات", type:"mc",
+   text:"سرم آبرسان و ترمیم‌کننده بلک‌بری (مناسب پوست خشک) حاوی چه درصدی هیالورونیک اسید است؟",
+   options:["۱٪","۲٪","۵٪","۱۰٪"], correct:1},
+
+  {id:5, cat:"ویژگی محصولات", type:"mc",
+   text:"سرم ضد ریزش موی بلک‌بری علاوه بر عصاره‌های گیاهی، حاوی چه ماده محرک رشدی است؟",
+   options:["مینوکسیدیل","کافئین","بیوتین خالص","کراتین"], correct:1},
+
+  {id:6, cat:"ویژگی محصولات", type:"mc",
+   text:"محلول پاک‌کننده آرایش «ضدآب» MND برای چه هدفی طراحی شده؟",
+   options:["پاک کردن آرایش‌های معمولی روزانه","پاک کردن آرایش‌های مقاوم به آب تا ۲۴ ساعت","فقط پاک کردن آرایش چشم و لب","لایه‌برداری پوست"], correct:1},
+
+  {id:7, cat:"ویژگی محصولات", type:"mc",
+   text:"تونر «متعادل‌کننده سبوم پوست» MND برای کدام نوع پوست مناسب است؟",
+   options:["خشک","حساس","معمولی","چرب"], correct:3},
+
+  {id:8, cat:"ویژگی محصولات", type:"mc",
+   text:"کرم نرم‌کننده MND حاوی ۵٪ اوره، مناسب کدام نوع پوست است؟",
+   options:["چرب","خشک","حساس","معمولی"], correct:1},
+
+  {id:9, cat:"ویژگی محصولات", type:"mc",
+   text:"کرم ضدآفتاب فیزیکی MND مخصوص پوست حساس چه فاکتور حفاظتی (SPF) دارد؟",
+   options:["SPF 15","SPF 20","SPF 30","SPF 90"], correct:1},
+
+  {id:10, cat:"ویژگی محصولات", type:"mc",
+   text:"کدام محصول الن بیوتی برای کاهش میل به قند و شیرینی و کاهش گرسنگی بین وعده‌ها معرفی شده؟",
+   options:["پودر کلاژن خوراکی","قطره سیلیس","عصاره چای سبز + زعفران","پودر قارچ صدفی (Mushfit)"], correct:2},
+
+  {id:11, cat:"ویژگی محصولات", type:"mc",
+   text:"پودر کلاژن خوراکی الن بیوتی با چه ماده‌ای شیرین شده و فاقد چه موادی است؟",
+   options:["با شکر شیرین شده، فاقد نگهدارنده","با سوکرالوز شیرین شده، فاقد نمک و گلوتن","با عسل شیرین شده، فاقد چربی","بدون شیرین‌کننده، فاقد رنگ"], correct:1},
+
+  {id:12, cat:"تشخیص نوع پوست", type:"mc",
+   text:"برای مشتری با پوست حساس، کدام کرم مرطوب‌کننده خط MND پیشنهاد می‌شود؟",
+   options:["کرم مرطوب‌کننده پوست چرب","بالم مرطوب‌کننده مخصوص پوست حساس","ژل-کرم آبرسان پوست چرب","کرم آبرسان پوست معمولی"], correct:1},
+
+  {id:13, cat:"تشخیص نوع پوست", type:"mc",
+   text:"کدام ماسک صورت MND برای پوست چرب و کاهش سبوم مناسب‌تر است؟",
+   options:["ماسک صورت حاوی عصاره آلوئه‌ورا","ماسک خاک رس روشن‌کننده","ماسک صورت حاوی پودر زغال","ژل-کرم آبرسان"], correct:2},
+
+  {id:14, cat:"تشخیص نوع پوست", type:"mc",
+   text:"محصول لایه‌بردار مناسب پوست معمولی و خشک در خط MND کدام است؟",
+   options:["ژل-کرم لایه‌بردار حاوی ۲٪ بتاهیدروکسی اسید","کرم لایه‌بردار حاوی ۱۰٪ آلفاهیدروکسی اسید","خمیر اسکراب بدن","ماسک صورت حاوی پودر زغال"], correct:1},
+
+  {id:15, cat:"نحوه و ترتیب مصرف", type:"text",
+   text:"ترتیب صحیح مصرف محصولات در یک روتین صبحگاهی استاندارد پوست معمولی (با استفاده از خط MND) را به‌ترتیب مرحله‌به‌مرحله بنویسید."},
+
+  {id:16, cat:"نحوه و ترتیب مصرف", type:"text",
+   text:"سرم‌های صورت (چه بلک‌بری، چه MND) باید قبل از کرم مرطوب‌کننده استفاده شوند یا بعد از آن؟ دلیل این ترتیب را توضیح دهید."},
+
+  {id:17, cat:"نحوه و ترتیب مصرف", type:"text",
+   text:"محصولات لایه‌بردار (اسکراب، AHA، BHA، ماسک خاک رس) با چه فاصله زمانی (چند بار در هفته) باید استفاده شوند و چرا نباید روزانه مصرف شوند؟"},
+
+  {id:18, cat:"اهمیت مصرف", type:"text",
+   text:"چرا حتی هنگام استفاده از سرم یا کرم روشن‌کننده لک (مثل سرم آلفا آربوتین بلک‌بری یا کرم ضدلک MND)، مصرف روزانه ضدآفتاب ضروری است؟"},
+
+  {id:19, cat:"اهمیت مصرف", type:"text",
+   text:"چرا در روتین پوست چرب، با وجود چرب بودن پوست، باز هم استفاده از یک مرطوب‌کننده سبک (نه فقط محصولات کنترل‌کننده چربی) توصیه می‌شود؟"},
+
+  {id:20, cat:"اهمیت مصرف", type:"text",
+   text:"چرا اکثر سرم‌های بلک‌بری حاوی «عصاره سلول بنیادی گیاهی» و «پپتید» هستند؟ نقش کلی این دو ترکیب برای پوست چیست؟"},
+
+  {id:21, cat:"روتین ترکیبی", type:"text",
+   text:"یک مشتری با پوست چرب و لک ناشی از آفتاب مراجعه کرده است. یک روتین کامل صبح و شب برای او طراحی کنید؛ نام دقیق محصولات (از هر برندی که لازم است) و ترتیب مصرف را ذکر کنید."},
+
+  {id:22, cat:"روتین ترکیبی", type:"text",
+   text:"برای فردی با پوست خشک که نگران خطوط ریز و چروک است، یک روتین شب با ترکیب محصولات بلک‌بری و MND پیشنهاد دهید."},
+
+  {id:23, cat:"روتین ترکیبی", type:"text",
+   text:"برای تقویت مو و کاهش ریزش مو، چه ترکیبی از محصولات (بلک‌بری، MND، و در صورت نیاز الن بیوتی به‌عنوان مکمل خوراکی) پیشنهاد می‌کنید؟ نحوه و دفعات مصرف را هم بنویسید."},
+
+  {id:24, cat:"مو، ابرو و مژه", type:"mc",
+   text:"کدام محصول MND برای پوست سر چرب و کاهش ترشح سبوم کف سر طراحی شده؟",
+   options:["شامپوی روزانه حاوی روغن آرگان","شامپوی تخصصی مناسب پوست سر چرب","شامپوی ضدشوره","شامپوی حاوی روغن زیتون"], correct:1},
+
+  {id:25, cat:"مو، ابرو و مژه", type:"text",
+   text:"تفاوت اصلی «ماسک مو با آبکشی» و «ماسک مو بدون آبکشی (Leave-in)» خط MND در نحوه استفاده و کاربرد چیست؟"}
+];
+
+/* ===================== منطق برنامه ===================== */
+let userName = "";
+const answers = {};
+
+const startScreen = document.getElementById('startScreen');
+const nameInput = document.getElementById('nameInput');
+const startBtn = document.getElementById('startBtn');
+const progressWrap = document.getElementById('progressWrap');
+const examForm = document.getElementById('examForm');
+const submitWrap = document.getElementById('submitWrap');
+const submitBtn = document.getElementById('submitBtn');
+const warnMsg = document.getElementById('warnMsg');
+const doneScreen = document.getElementById('doneScreen');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const progressPct = document.getElementById('progressPct');
+
+function toFa(n){
+  const map={'0':'۰','1':'۱','2':'۲','3':'۳','4':'۴','5':'۵','6':'۶','7':'۷','8':'۸','9':'۹'};
+  return String(n).replace(/[0-9]/g, d=>map[d]);
+}
+
+function renderQuestions(){
+  examForm.innerHTML = "";
+  questions.forEach((q, idx)=>{
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    let inner = `<span class="q-cat">${q.cat}</span>
+      <p class="q-text"><span class="q-num">${toFa(idx+1)}.</span>${q.text}</p>`;
+
+    if(q.type === "mc"){
+      inner += q.options.map((opt,i)=>`
+        <label class="opt" data-qid="${q.id}" data-idx="${i}">
+          <input type="radio" name="q${q.id}" value="${i}">
+          <span>${opt}</span>
+        </label>`).join("");
+    } else {
+      inner += `<textarea class="answer" data-qid="${q.id}" placeholder="پاسخ خود را اینجا بنویسید..."></textarea>`;
+    }
+    card.innerHTML = inner;
+    examForm.appendChild(card);
+  });
+
+  examForm.querySelectorAll('.opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      const qid = opt.dataset.qid;
+      examForm.querySelectorAll(`.opt[data-qid="${qid}"]`).forEach(o=>o.classList.remove('checked'));
+      opt.classList.add('checked');
+      opt.querySelector('input').checked = true;
+      answers[qid] = parseInt(opt.dataset.idx);
+      updateProgress();
+    });
+  });
+
+  examForm.querySelectorAll('textarea.answer').forEach(ta=>{
+    ta.addEventListener('input', ()=>{
+      answers[ta.dataset.qid] = ta.value;
+      updateProgress();
+    });
+  });
+}
+
+function updateProgress(){
+  const answered = Object.keys(answers).filter(k=>{
+    const v = answers[k];
+    return v !== undefined && v !== null && String(v).trim() !== "";
+  }).length;
+  const total = questions.length;
+  const pct = Math.round((answered/total)*100);
+  progressFill.style.width = pct + "%";
+  progressText.textContent = `${toFa(answered)} از ${toFa(total)} پاسخ داده شده`;
+  progressPct.textContent = toFa(pct) + "٪";
+}
+
+startBtn.addEventListener('click', ()=>{
+  const name = nameInput.value.trim();
+  if(!name){
+    nameInput.style.borderColor = "var(--danger)";
+    nameInput.focus();
+    return;
+  }
+  userName = name;
+  startScreen.style.display = "none";
+  progressWrap.style.display = "block";
+  examForm.style.display = "block";
+  submitWrap.style.display = "block";
+  renderQuestions();
+  updateProgress();
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+submitBtn.addEventListener('click', async ()=>{
+  const answeredCount = questions.filter(q=>{
+    const v = answers[q.id];
+    return v !== undefined && v !== null && String(v).trim() !== "";
+  }).length;
+
+  if(answeredCount < questions.length){
+    warnMsg.style.display = "block";
+    warnMsg.scrollIntoView({behavior:"smooth", block:"center"});
+    return;
+  }
+  warnMsg.style.display = "none";
+  submitBtn.disabled = true;
+  submitBtn.textContent = "در حال ارسال...";
+
+  // محاسبه امتیاز سوالات چندگزینه‌ای
+  let mcTotal = 0, mcCorrect = 0;
+  const detailedAnswers = questions.map(q=>{
+    if(q.type === "mc"){
+      mcTotal++;
+      const given = answers[q.id];
+      const isCorrect = given === q.correct;
+      if(isCorrect) mcCorrect++;
+      return {id:q.id, category:q.cat, type:"mc", question:q.text,
+        selected_option:q.options[given], correct_option:q.options[q.correct], is_correct:isCorrect};
+    } else {
+      return {id:q.id, category:q.cat, type:"text", question:q.text, answer:answers[q.id]};
+    }
+  });
+
+  const payload = {
+    full_name: userName,
+    mc_score: mcCorrect,
+    mc_total: mcTotal,
+    answers: detailedAnswers,
+    submitted_at: new Date().toISOString()
+  };
+
+  try{
+    const {error} = await supabaseClient.from(TABLE_NAME).insert([payload]);
+    if(error) throw error;
+    showDone();
+  }catch(err){
+    console.error(err);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "ثبت نهایی پاسخ‌ها";
+    warnMsg.textContent = "خطا در ارسال پاسخ‌ها. لطفاً دوباره تلاش کنید.";
+    warnMsg.style.display = "block";
+  }
+});
+
+function showDone(){
+  progressWrap.style.display = "none";
+  examForm.style.display = "none";
+  submitWrap.style.display = "none";
+  doneScreen.style.display = "block";
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+</script>
+</body>
+</html>

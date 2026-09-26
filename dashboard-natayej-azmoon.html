@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد نتایج آزمون محصولات</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --sage:#5f7a63;
+    --sage-dark:#3f5643;
+    --cream:#faf6ef;
+    --card:#ffffff;
+    --gold:#b8935a;
+    --ink:#2b2b26;
+    --muted:#7a756a;
+    --line:#e6ded0;
+    --danger:#b5533f;
+    --good:#4c7a52;
+    --mid:#b8935a;
+    --low:#b5533f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Vazirmatn',sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    line-height:1.8;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:28px 18px 80px}
+
+  header.top{text-align:center; padding:20px 10px 26px}
+  header.top .badge{
+    display:inline-block; font-size:13px; color:var(--gold);
+    border:1px solid var(--gold); border-radius:999px;
+    padding:4px 16px; margin-bottom:14px;
+  }
+  header.top h1{font-size:24px; font-weight:800; margin:0 0 6px; color:var(--sage-dark)}
+  header.top p{color:var(--muted); font-size:14px; margin:0}
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .stat-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    text-align:center;
+  }
+  .stat-card .num{font-size:24px; font-weight:800; color:var(--sage-dark)}
+  .stat-card .lbl{font-size:12.5px; color:var(--muted); margin-top:4px}
+
+  .toolbar{
+    display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .toolbar input, .toolbar select{
+    font-family:inherit;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:14px;
+    background:#fdfcfa;
+  }
+  .toolbar input{flex:1; min-width:160px}
+  .toolbar input:focus, .toolbar select:focus{outline:none; border-color:var(--sage)}
+
+  #loading, #empty{
+    text-align:center; color:var(--muted); padding:40px 10px; font-size:14.5px;
+  }
+
+  .row-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:12px;
+    overflow:hidden;
+  }
+  .row-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:16px 18px;
+    cursor:pointer;
+  }
+  .row-head .who{display:flex; flex-direction:column; gap:3px}
+  .row-head .name{font-weight:700; font-size:15.5px}
+  .row-head .date{font-size:12.5px; color:var(--muted)}
+  .score-pill{
+    font-size:13px;
+    font-weight:700;
+    border-radius:999px;
+    padding:5px 14px;
+    white-space:nowrap;
+  }
+  .score-good{background:#eaf3ea; color:var(--good)}
+  .score-mid{background:#f6efe3; color:var(--mid)}
+  .score-low{background:#f6e9e6; color:var(--low)}
+  .arrow{transition:transform .2s; color:var(--muted)}
+  .row-head.open .arrow{transform:rotate(180deg)}
+
+  .row-body{
+    display:none;
+    padding:0 18px 18px;
+    border-top:1px solid var(--line);
+  }
+  .row-body.open{display:block}
+
+  .ans-item{
+    padding:14px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .ans-item:last-child{border-bottom:none}
+  .ans-cat{
+    display:inline-block;
+    font-size:11.5px;
+    color:var(--sage-dark);
+    background:#eaf0e9;
+    padding:2px 10px;
+    border-radius:99px;
+    margin-bottom:8px;
+  }
+  .ans-q{font-size:14px; font-weight:600; margin-bottom:8px}
+  .ans-a{font-size:13.5px; color:var(--ink); background:#fbf9f4; border-radius:8px; padding:10px 12px}
+  .ans-mc-correct{color:var(--good); font-weight:700}
+  .ans-mc-wrong{color:var(--danger); font-weight:700}
+  .ans-mc-line{font-size:13px; margin-top:4px; color:var(--muted)}
+
+  footer{
+    text-align:center; color:var(--muted); font-size:12.5px;
+    margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="badge">داشبورد داخلی</span>
+    <h1>نتایج آزمون تخصصی محصولات</h1>
+    <p>مشاهده پاسخ‌های ثبت‌شده و امتیاز سوالات چندگزینه‌ای</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="statCount">۰</div><div class="lbl">تعداد شرکت‌کننده</div></div>
+    <div class="stat-card"><div class="num" id="statAvg">۰٪</div><div class="lbl">میانگین نمره چندگزینه‌ای</div></div>
+    <div class="stat-card"><div class="num" id="statMax">۰</div><div class="lbl">تعداد سوالات چندگزینه‌ای</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="جستجو بر اساس نام...">
+    <select id="sortSelect">
+      <option value="date_desc">جدیدترین</option>
+      <option value="date_asc">قدیمی‌ترین</option>
+      <option value="score_desc">بیشترین نمره</option>
+      <option value="score_asc">کمترین نمره</option>
+    </select>
+  </div>
+
+  <div id="loading">در حال بارگذاری اطلاعات...</div>
+  <div id="empty" style="display:none">هنوز پاسخی ثبت نشده است.</div>
+  <div id="listWrap"></div>
+
+  <footer>طراح: محمد سیستانی</footer>
+</div>
+
+<script>
+/* ===================== تنظیمات Supabase ===================== */
+const SUPABASE_URL = "https://atrfyfwwhtzxarnpjnlu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0cmZ5Znd3aHR6eGFybnBqbmx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTI5MjcsImV4cCI6MjEwMDE4ODkyN30.o-nD3ROsmmUSpQHbziQi7qKz4qdRAC9EXhDino95wL8";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const TABLE_NAME = "exam_responses";
+
+let allRows = [];
+
+function toFa(n){
+  const map={'0':'۰','1':'۱','2':'۲','3':'۳','4':'۴','5':'۵','6':'۶','7':'۷','8':'۸','9':'۹'};
+  return String(n).replace(/[0-9]/g, d=>map[d]);
+}
+
+function formatDate(iso){
+  try{
+    const d = new Date(iso);
+    return d.toLocaleDateString('fa-IR') + " - " + d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
+  }catch(e){ return iso; }
+}
+
+function scoreClass(score, total){
+  if(!total) return 'score-mid';
+  const pct = score/total;
+  if(pct >= 0.7) return 'score-good';
+  if(pct >= 0.4) return 'score-mid';
+  return 'score-low';
+}
+
+async function loadData(){
+  const {data, error} = await supabaseClient
+    .from(TABLE_NAME)
+    .select('*')
+    .order('submitted_at', {ascending:false});
+
+  document.getElementById('loading').style.display = 'none';
+
+  if(error){
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('loading').textContent = 'خطا در دریافت اطلاعات. آدرس/کلید Supabase را بررسی کنید.';
+    console.error(error);
+    return;
+  }
+
+  allRows = data || [];
+  if(allRows.length === 0){
+    document.getElementById('empty').style.display = 'block';
+    return;
+  }
+  updateStats();
+  renderList(allRows);
+}
+
+function updateStats(){
+  document.getElementById('statCount').textContent = toFa(allRows.length);
+  const withScore = allRows.filter(r => r.mc_total);
+  const avgPct = withScore.length
+    ? Math.round(withScore.reduce((s,r)=> s + (r.mc_score/r.mc_total*100), 0) / withScore.length)
+    : 0;
+  document.getElementById('statAvg').textContent = toFa(avgPct) + "٪";
+  document.getElementById('statMax').textContent = toFa(withScore[0]?.mc_total || 0);
+}
+
+function applyFilters(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  let rows = allRows.filter(r => (r.full_name || "").toLowerCase().includes(q));
+
+  rows.sort((a,b)=>{
+    if(sort === 'date_desc') return new Date(b.submitted_at) - new Date(a.submitted_at);
+    if(sort === 'date_asc') return new Date(a.submitted_at) - new Date(b.submitted_at);
+    const pctA = a.mc_total ? a.mc_score/a.mc_total : 0;
+    const pctB = b.mc_total ? b.mc_score/b.mc_total : 0;
+    if(sort === 'score_desc') return pctB - pctA;
+    if(sort === 'score_asc') return pctA - pctB;
+    return 0;
+  });
+
+  renderList(rows);
+}
+
+function renderList(rows){
+  const listWrap = document.getElementById('listWrap');
+  listWrap.innerHTML = "";
+
+  rows.forEach((row, idx)=>{
+    const card = document.createElement('div');
+    card.className = 'row-card';
+
+    const sCls = scoreClass(row.mc_score, row.mc_total);
+    const scoreLabel = row.mc_total ? `${toFa(row.mc_score)} از ${toFa(row.mc_total)}` : "—";
+
+    card.innerHTML = `
+      <div class="row-head" data-idx="${idx}">
+        <div class="who">
+          <span class="name">${row.full_name || "بدون نام"}</span>
+          <span class="date">${formatDate(row.submitted_at)}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px">
+          <span class="score-pill ${sCls}">${scoreLabel}</span>
+          <span class="arrow">▾</span>
+        </div>
+      </div>
+      <div class="row-body" id="body-${idx}"></div>
+    `;
+
+    const body = card.querySelector('.row-body');
+    const answers = row.answers || [];
+    body.innerHTML = answers.map(a=>{
+      if(a.type === 'mc'){
+        const cls = a.is_correct ? 'ans-mc-correct' : 'ans-mc-wrong';
+        return `<div class="ans-item">
+          <span class="ans-cat">${a.category || ""}</span>
+          <div class="ans-q">${a.question}</div>
+          <div class="ans-mc-line">پاسخ داده‌شده: <span class="${cls}">${a.selected_option || "—"}</span></div>
+          ${!a.is_correct ? `<div class="ans-mc-line">پاسخ صحیح: <span class="ans-mc-correct">${a.correct_option}</span></div>` : ""}
+        </div>`;
+      } else {
+        return `<div class="ans-item">
+          <span class="ans-cat">${a.category || ""}</span>
+          <div class="ans-q">${a.question}</div>
+          <div class="ans-a">${(a.answer || "—").replace(/\\n/g,'<br>')}</div>
+        </div>`;
+      }
+    }).join("");
+
+    listWrap.appendChild(card);
+
+    card.querySelector('.row-head').addEventListener('click', ()=>{
+      const head = card.querySelector('.row-head');
+      head.classList.toggle('open');
+      body.classList.toggle('open');
+    });
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('sortSelect').addEventListener('change', applyFilters);
+
+loadData();
+</script>
+</body>
+</html>
